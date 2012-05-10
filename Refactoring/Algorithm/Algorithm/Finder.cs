@@ -10,20 +10,18 @@ namespace Algorithm
         {
             _p = p;
         }
-        
+
         public F Find(FT ft)
         {
             var tr = PopulateTR();
 
-            if(tr.Count < 1)
+            if (tr.Count < 1)
             {
                 return new F();
             }
 
-            return AnswerCalculator.CalculateAnswer(ft, tr);
+            return new AnswerCalculator().CalculateAnswer(ft, tr);
         }
-
-
 
         private List<F> PopulateTR()
         {
@@ -52,20 +50,44 @@ namespace Algorithm
         }
     }
 
-    public class AnswerCalculator
+    public abstract class AnswerHandler
     {
-        public static F CalculateAnswer(FT ft, List<F> tr)
+        public abstract F execute(List<F> tr);
+        public AnswerCalculator AnswerCalculator { get; private set; }
+
+        public AnswerHandler(AnswerCalculator answerCalculator)
         {
-            if (ft == FT.One)
-                return calculateAnswerForOne(tr);
-            if (ft == FT.Two)
-            {
-                return calculateAnswerForTwo(tr);
-            }
-            return null;
+            AnswerCalculator = answerCalculator;
+        }
+    }
+
+    public class FTTwoAnswerHandler : AnswerHandler
+    {
+        public FTTwoAnswerHandler(AnswerCalculator answerCalculator) : base(answerCalculator)
+        {
         }
 
-        public static F calculateAnswerForOne(List<F> tr)
+        public override F execute(List<F> tr)
+        {
+            F answer = tr[0];
+            foreach (var result in tr)
+            {
+                if (result.D > answer.D)
+                {
+                    answer = result;
+                }
+            }
+            return answer;
+        }
+    }
+
+    public class FTOneAnswerHandler : AnswerHandler
+    {
+        public FTOneAnswerHandler(AnswerCalculator answerCalculator) : base(answerCalculator)
+        {
+        }
+
+        public override F execute(List<F> tr)
         {
             F answer = tr[0];
             foreach (var result in tr)
@@ -77,21 +99,21 @@ namespace Algorithm
             }
             return answer;
         }
+    }
 
-        public static F calculateAnswerForTwo(List<F> tr)
+    public class AnswerCalculator
+    {
+        private readonly Dictionary<FT, AnswerHandler> handlers;
+        public AnswerCalculator()
         {
-            F answer = tr[0];
-            foreach (var result in tr)
-            {
-                if (result.D > answer.D)
-                {
-                    answer = result;
-                }
-                //break;
-
-
-            }
-            return answer;
+            handlers = new Dictionary<FT, AnswerHandler>
+                           {{FT.One, new FTOneAnswerHandler(this)}, {FT.Two, new FTTwoAnswerHandler(this)}};
+        }
+ 
+        public F CalculateAnswer(FT ft, List<F> tr)
+        {
+            AnswerHandler handler = handlers[ft];
+            return handler.execute(tr);
         }
     }
 }
