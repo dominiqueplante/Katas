@@ -4,45 +4,50 @@ namespace Algorithm
 {
     public class Finder
     {
-        private readonly List<Thing> _p;
+        private readonly List<Person> _people;
 
-        public Finder(List<Thing> p)
+        public Finder(List<Person> people)
         {
-            _p = p;
+            _people = people;
         }
 
-        public F Find(FT ft)
+        public PersonRelationship FindRelationship(FT ft)
         {
-            var tr = PopulateTR();
+            var tr = GenerateTRList();
 
-            if (tr.Count < 1)
+            if (tr.Count == 0)
             {
-                return new F();
+                return new PersonRelationship();
             }
 
             return new AnswerCalculator().CalculateAnswer(ft, tr);
         }
 
-        private List<F> PopulateTR()
+        private List<PersonRelationship> GenerateTRList()
         {
-            var tr = new List<F>();
+            var tr = new PeopleBuilder(_people).GeneratePeopleRelationships();
+            return tr;
+        }
+    }
 
-            for (var i = 0; i < _p.Count - 1; i++)
+    public class PeopleBuilder
+    {
+        public List<Person> People { get; private set; }
+ 
+        public PeopleBuilder(List<Person> people )
+        {
+            People = people;
+        }
+
+        public List<PersonRelationship> GeneratePeopleRelationships()
+        {
+            var tr = new List<PersonRelationship>();
+
+            for (var i = 0; i < People.Count - 1; i++)
             {
-                for (var j = i + 1; j < _p.Count; j++)
+                for (var j = i + 1; j < People.Count; j++)
                 {
-                    var r = new F();
-                    if (_p[i].BirthDate < _p[j].BirthDate)
-                    {
-                        r.P1 = _p[i];
-                        r.P2 = _p[j];
-                    }
-                    else
-                    {
-                        r.P1 = _p[j];
-                        r.P2 = _p[i];
-                    }
-                    r.D = r.P2.BirthDate - r.P1.BirthDate;
+                    var r = PersonRelationship.CreatePair(People, j, i);
                     tr.Add(r);
                 }
             }
@@ -52,7 +57,7 @@ namespace Algorithm
 
     public abstract class AnswerHandler
     {
-        public abstract F execute(List<F> tr);
+        public abstract PersonRelationship execute(List<PersonRelationship> tr);
         public AnswerCalculator AnswerCalculator { get; private set; }
 
         public AnswerHandler(AnswerCalculator answerCalculator)
@@ -67,12 +72,12 @@ namespace Algorithm
         {
         }
 
-        public override F execute(List<F> tr)
+        public override PersonRelationship execute(List<PersonRelationship> tr)
         {
-            F answer = tr[0];
+            PersonRelationship answer = tr[0];
             foreach (var result in tr)
             {
-                if (result.D > answer.D)
+                if (result.BirthdayDateDifference > answer.BirthdayDateDifference)
                 {
                     answer = result;
                 }
@@ -87,12 +92,12 @@ namespace Algorithm
         {
         }
 
-        public override F execute(List<F> tr)
+        public override PersonRelationship execute(List<PersonRelationship> tr)
         {
-            F answer = tr[0];
+            PersonRelationship answer = tr[0];
             foreach (var result in tr)
             {
-                if (result.D < answer.D)
+                if (result.BirthdayDateDifference < answer.BirthdayDateDifference)
                 {
                     answer = result;
                 }
@@ -110,7 +115,7 @@ namespace Algorithm
                            {{FT.One, new FTOneAnswerHandler(this)}, {FT.Two, new FTTwoAnswerHandler(this)}};
         }
  
-        public F CalculateAnswer(FT ft, List<F> tr)
+        public PersonRelationship CalculateAnswer(FT ft, List<PersonRelationship> tr)
         {
             AnswerHandler handler = handlers[ft];
             return handler.execute(tr);
